@@ -293,6 +293,7 @@ class Resize:
             dict: Resized results, 'img_shape', 'pad_shape', 'scale_factor', \
                 'keep_ratio' keys are added into result dict.
         """
+
         if 'scale' not in results:
             if 'scale_factor' in results:
                 img_shape = results['img'].shape[:2]
@@ -311,6 +312,7 @@ class Resize:
                 if 'scale_factor' in results:
                     results.pop('scale_factor')
                 self._random_scale(results)
+
         self._resize_img(results)
         self._resize_bboxes(results)
         self._resize_masks(results)
@@ -621,7 +623,6 @@ class Pad:
 
     def _pad_img(self, results):
         """Pad images according to ``self.size``."""
-
         pad_val = self.pad_val.get('img', 0)
         for key in results.get('img_fields', ['img']):
             if self.pad_to_square:
@@ -646,7 +647,6 @@ class Pad:
                 else:
                     padded_img = mmcv.impad(
                         results[key], shape=self.size, pad_val=pad_val)
-
             elif self.size_divisor is not None:
                 padded_img = mmcv.impad_to_multiple(
                     results[key], self.size_divisor, pad_val=pad_val)
@@ -911,10 +911,8 @@ class RandomCrop:
                 updated according to crop size.
         """
         image_size = results['img'].shape[:2]
-        # print(image_size)
         crop_size = self._get_crop_size(image_size)
         results = self._crop_data(results, crop_size, self.allow_negative_crop)
-        # print(results['img'].shape)
         return results
 
     def __repr__(self):
@@ -2386,7 +2384,7 @@ class MixUp:
         retrieve_img = retrieve_results['img']
 
         jit_factor = random.uniform(*self.ratio_range)
-        is_filp = random.uniform(0, 1) > self.flip_ratio
+        is_filp = random.uniform(0, 1) < self.flip_ratio
 
         if len(retrieve_img.shape) == 3:
             out_img = np.ones(
@@ -2822,6 +2820,7 @@ class CopyPaste:
         self.bbox_occluded_thr = bbox_occluded_thr
         self.mask_occluded_thr = mask_occluded_thr
         self.selected = selected
+        self.paste_by_box = False
 
     def get_indexes(self, dataset):
         """Call function to collect indexes.s.
@@ -2832,6 +2831,42 @@ class CopyPaste:
             list: Indexes.
         """
         return random.randint(0, len(dataset))
+
+    def gen_masks_from_bboxes(self, bboxes, img_shape):
+        """Generate gt_masks based on gt_bboxes.
+
+        Args:
+            bboxes (list): The bboxes's list.
+            img_shape (tuple): The shape of image.
+        Returns:
+            BitmapMasks
+        """
+        self.paste_by_box = True
+        img_h, img_w = img_shape[:2]
+        xmin, ymin = bboxes[:, 0:1], bboxes[:, 1:2]
+        xmax, ymax = bboxes[:, 2:3], bboxes[:, 3:4]
+        gt_masks = np.zeros((len(bboxes), img_h, img_w), dtype=np.uint8)
+        for i in range(len(bboxes)):
+            gt_masks[i,
+                     int(ymin[i]):int(ymax[i]),
+                     int(xmin[i]):int(xmax[i])] = 1
+        return BitmapMasks(gt_masks, img_h, img_w)
+
+    def get_gt_masks(self, results):
+        """Get gt_masks originally or generated based on bboxes.
+
+        If gt_masks is not contained in results,
+        it will be generated based on gt_bboxes.
+        Args:
+            results (dict): Result dict.
+        Returns:
+            BitmapMasks: gt_masks, originally or generated based on bboxes.
+        """
+        if results.get('gt_masks', None) is not None:
+            return results['gt_masks']
+        else:
+            return self.gen_masks_from_bboxes(
+                results.get('gt_bboxes', []), results['img'].shape)
 
     def __call__(self, results):
         """Call function to make a copy-paste of image.
@@ -2846,6 +2881,13 @@ class CopyPaste:
         num_images = len(results['mix_results'])
         assert num_images == 1, \
             f'CopyPaste only supports processing 2 images, got {num_images}'
+
+        # Get gt_masks originally or generated based on bboxes.
+        results['gt_masks'] = self.get_gt_masks(results)
+        # only one mix picture
+        results['mix_results'][0]['gt_masks'] = self.get_gt_masks(
+            results['mix_results'][0])
+
         if self.selected:
             selected_results = self._select_object(results['mix_results'][0])
         else:
@@ -2891,6 +2933,8 @@ class CopyPaste:
         src_masks = src_results['gt_masks']
 
         if len(src_bboxes) == 0:
+            if self.paste_by_box:
+                dst_results.pop('gt_masks')
             return dst_results
 
         # update masks and generate bboxes from updated masks
@@ -2919,8 +2963,11 @@ class CopyPaste:
         dst_results['img'] = img
         dst_results['gt_bboxes'] = bboxes
         dst_results['gt_labels'] = labels
-        dst_results['gt_masks'] = BitmapMasks(masks, masks.shape[1],
-                                              masks.shape[2])
+        if self.paste_by_box:
+            dst_results.pop('gt_masks')
+        else:
+            dst_results['gt_masks'] = BitmapMasks(masks, masks.shape[1],
+                                                  masks.shape[2])
 
         return dst_results
 

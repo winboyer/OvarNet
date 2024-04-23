@@ -23,9 +23,11 @@ mp_start_method = 'fork'
 #   - `enable` means enable scaling LR automatically
 #       or not by default.
 #   - `base_batch_size` = (8 GPUs) x (2 samples per GPU).
-auto_scale_lr = dict(enable=False, base_batch_size=16)
+# auto_scale_lr = dict(enable=False, base_batch_size=16)
+auto_scale_lr = dict(enable=False, base_batch_size=4)
 
-data_root = '/expand_data/datasets'
+# data_root = '/expand_data/datasets'
+data_root = '/root/jinyfeng/datas/OverNet'
 
 attribute_index_file = dict(
     # att_file='../attributes/VAW/common2common_att2id.json',
@@ -56,8 +58,8 @@ model = dict(
     text_proj_head=False,
     backbone=dict(
         type='CLIPModel',
-        backbone_name='RN50',  # RN101, RN50x4，RN50x64, ViT-B/16, ViT-L/14@336px, ViT-B/16
-        # backbone_name='ViT-B/16',
+#         backbone_name='RN50',  # RN101, RN50x4，RN50x64, ViT-B/16, ViT-L/14@336px, ViT-B/16
+        backbone_name='ViT-B/16',
         with_attn=True,
         load_ckpt_from=None,
         precision='fp32',
@@ -174,9 +176,11 @@ test_generated_pipeline = [
 ]
 
 samples_per_gpu = 256
+# samples_per_gpu = 2
+workers_per_gpu = 8
 data = dict(
     samples_per_gpu=samples_per_gpu,
-    workers_per_gpu=8,
+    workers_per_gpu=workers_per_gpu,
     persistent_workers=True,
     train=dict(
         type=dataset_type,
@@ -202,7 +206,7 @@ data = dict(
         open_category=False,
         pipeline=test_pipeline),
     test=dict(
-        samples_per_gpu=256,
+        samples_per_gpu=samples_per_gpu,
         type=dataset_type,
         data_root=data_root,
         dataset_split='test',

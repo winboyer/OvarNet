@@ -6,10 +6,10 @@ import numpy as np
 import torch
 import torch.distributed as dist
 from mmcv.runner import (DistSamplerSeedHook, EpochBasedRunner,
-                         Fp16OptimizerHook, OptimizerHook, build_optimizer,
-                         build_runner, get_dist_info)
+                         Fp16OptimizerHook, OptimizerHook, build_runner,
+                         get_dist_info)
 
-from mmdet.core import DistEvalHook, EvalHook
+from mmdet.core import DistEvalHook, EvalHook, build_optimizer
 from mmdet.datasets import (build_dataloader, build_dataset,
                             replace_ImageToTensor)
 from mmdet.utils import (build_ddp, build_dp, compat_cfg,
@@ -135,7 +135,6 @@ def train_detector(model,
     train_dataloader_default_args = dict(
         samples_per_gpu=2,
         workers_per_gpu=2,
-        shuffle=True,
         # `num_gpus` will be ignored if distributed
         num_gpus=len(cfg.gpu_ids),
         dist=distributed,
@@ -147,9 +146,10 @@ def train_detector(model,
         **train_dataloader_default_args,
         **cfg.data.get('train_dataloader', {})
     }
-    # print(cfg.data.get('train_dataloader', {}))
-    print(train_loader_cfg)
+    
+    print('train_loader_cfg==========', train_loader_cfg)
     data_loaders = [build_dataloader(ds, **train_loader_cfg) for ds in dataset]
+
     # put model on gpus
     if distributed:
         find_unused_parameters = cfg.get('find_unused_parameters', False)
@@ -182,7 +182,10 @@ def train_detector(model,
 
     # fp16 setting
     fp16_cfg = cfg.get('fp16', None)
+    if fp16_cfg is None and cfg.get('device', None) == 'npu':
+        fp16_cfg = dict(loss_scale='dynamic')
     if fp16_cfg is not None:
+        print('-------------fp16_cfg is not None--------------')
         optimizer_config = Fp16OptimizerHook(
             **cfg.optimizer_config, **fp16_cfg, distributed=distributed)
     elif distributed and 'type' not in cfg.optimizer_config:
@@ -232,7 +235,7 @@ def train_detector(model,
         # priority of IterTimerHook has been modified from 'NORMAL' to 'LOW'.
         runner.register_hook(
             eval_hook(val_dataloader, **eval_cfg), priority='LOW')
-
+        
         # register test hooks
         if test:
             test_dataloader_default_args = dict(
@@ -263,6 +266,7 @@ def train_detector(model,
             # priority of IterTimerHook has been modified from 'NORMAL' to 'LOW'.
             runner.register_hook(
                 test_hook(test_dataloader, **test_cfg), priority='LOW')
+            
 
     resume_from = None
     if cfg.resume_from is None and cfg.get('auto_resume'):
@@ -274,5 +278,4 @@ def train_detector(model,
         runner.resume(cfg.resume_from)
     elif cfg.load_from:
         runner.load_checkpoint(cfg.load_from)
-
     runner.run(data_loaders, cfg.workflow)

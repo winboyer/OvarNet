@@ -70,8 +70,6 @@ class BaseDenseHead(BaseModule, metaclass=ABCMeta):
                 (n,) tensor where each item is the predicted class label of
                 the corresponding box.
         """
-        # import pdb
-        # pdb.set_trace()
         assert len(cls_scores) == len(bbox_preds)
 
         if score_factors is None:
@@ -84,7 +82,7 @@ class BaseDenseHead(BaseModule, metaclass=ABCMeta):
 
         num_levels = len(cls_scores)
 
-        featmap_sizes = [cls_scores[i].shape[-2:] for i in range(num_levels)]  #5x[HxW]
+        featmap_sizes = [cls_scores[i].shape[-2:] for i in range(num_levels)]
         mlvl_priors = self.prior_generator.grid_priors(
             featmap_sizes,
             dtype=cls_scores[0].dtype,
@@ -94,8 +92,8 @@ class BaseDenseHead(BaseModule, metaclass=ABCMeta):
 
         for img_id in range(len(img_metas)):
             img_meta = img_metas[img_id]
-            cls_score_list = select_single_mlvl(cls_scores, img_id)  # cls_scores: 5x[Bx(3x1)xHxW]
-            bbox_pred_list = select_single_mlvl(bbox_preds, img_id)  # bbox_preds: 5x[Bx(3x4)xHxW]
+            cls_score_list = select_single_mlvl(cls_scores, img_id)
+            bbox_pred_list = select_single_mlvl(bbox_preds, img_id)
             if with_score_factors:
                 score_factor_list = select_single_mlvl(score_factors, img_id)
             else:
@@ -105,7 +103,7 @@ class BaseDenseHead(BaseModule, metaclass=ABCMeta):
                                               score_factor_list, mlvl_priors,
                                               img_meta, cfg, rescale, with_nms,
                                               **kwargs)
-            result_list.append(results)  # Nx5, 1000x5, 4+1
+            result_list.append(results)
         return result_list
 
     def _get_bboxes_single(self,
@@ -220,6 +218,7 @@ class BaseDenseHead(BaseModule, metaclass=ABCMeta):
             mlvl_labels.append(labels)
             if with_score_factors:
                 mlvl_score_factors.append(score_factor)
+
         return self._bbox_post_process(mlvl_scores, mlvl_labels, mlvl_bboxes,
                                        img_meta['scale_factor'], cfg, rescale,
                                        with_nms, mlvl_score_factors, **kwargs)
@@ -277,9 +276,7 @@ class BaseDenseHead(BaseModule, metaclass=ABCMeta):
         assert len(mlvl_scores) == len(mlvl_bboxes) == len(mlvl_labels)
 
         mlvl_bboxes = torch.cat(mlvl_bboxes)
-
         if rescale:
-
             mlvl_bboxes /= mlvl_bboxes.new_tensor(scale_factor)
         mlvl_scores = torch.cat(mlvl_scores)
         mlvl_labels = torch.cat(mlvl_labels)

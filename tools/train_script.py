@@ -1,7 +1,7 @@
 import os
 import time
 
-while True:
+# while True:
     # os.system("CUDA_VISIBLE_DEVICES=0,1,2,3 "
     #           "sh dist_train.sh "
     #           # "../configs_my/Op3_3_Boost_CLIPPrompt_Crop_Img_COCO_VAW.py "
@@ -16,13 +16,18 @@ while True:
     #           "results/EXP20230207_0 "
     #           "4")
 
-    # OvarNetP R50 train with KD
-    os.system("CUDA_VISIBLE_DEVICES=0,1,2,3 "
-              "sh dist_train.sh "
-              "../configs_my/OvarNet/Op2_1_OvarNetP_w_KD.py "
-              "results/EXP20230210_1 "
-              "4")
+#     # OvarNetP R50 train with KD
+#     os.system("CUDA_VISIBLE_DEVICES=0,1,2,3 "
+#               "sh dist_train.sh "
+#               "../configs_my/OvarNet/Op2_1_OvarNetP_w_KD.py "
+#               "results/EXP20230210_1 "
+#               "4")
 
+os.system("CUDA_VISIBLE_DEVICES=0,1 "
+          "sh dist_train.sh "
+          "../configs_my/OvarNet/Op1_1_align_clipattr_VAW.py "
+          "results/EXP20231010 "
+          "2")
 
     # os.system("CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 "
     #           "sh dist_train.sh "
@@ -81,5 +86,5 @@ while True:
     # #           "../configs_my/CLIPPrompt_Crop_Img_VAW3.py "
     # #           "results/EXP20220828_3 "
     # #           "8")
-    time.sleep(60*2)
+#     time.sleep(60*2)
 

@@ -26,8 +26,9 @@ mp_start_method = 'fork'
 auto_scale_lr = dict(enable=False, base_batch_size=16)
 
 # model settings
-# data_root = 'D:/Dataset'
-data_root = '/data/kyanchen/prompt/data'
+# data_root = '/data/kyanchen/prompt/data'
+data_root = '/root/jinyfeng/datas/OverNet'
+
 
 attribute_index_file = dict(
     # att_file='../attributes/VAW/common2common_att2id.json',
@@ -363,5 +364,6 @@ runner = dict(type='EpochBasedRunner', max_epochs=80)
 evaluation = dict(interval=5, metric='mAP')
 
 # load_from = 'results/EXP20221006_0/epoch_20.pth'
-load_from = 'results/EXP20221109_0/epoch_50.pth'
+# load_from = 'results/EXP20221109_0/epoch_50.pth'
+load_from = None
 resume_from = None

@@ -373,7 +373,6 @@ class AnchorHead(BaseDenseHead, BBoxTestMixin):
             img_metas,
             label_channels=label_channels,
             unmap_outputs=unmap_outputs)
-
         (all_labels, all_label_weights, all_bbox_targets, all_bbox_weights,
          pos_inds_list, neg_inds_list, sampling_results_list) = results[:7]
         rest_results = list(results[7:])  # user-added return values
@@ -426,9 +425,6 @@ class AnchorHead(BaseDenseHead, BBoxTestMixin):
         Returns:
             dict[str, Tensor]: A dictionary of loss components.
         """
-        import pdb
-        pdb.set_trace()
-
         # classification loss
         labels = labels.reshape(-1)
         label_weights = label_weights.reshape(-1)

@@ -320,8 +320,7 @@ class BBoxHead(BaseModule):
                    img_shape,
                    scale_factor,
                    rescale=False,
-                   cfg=None,
-                   keep_not_scale=False):
+                   cfg=None):
         """Transform network output for a batch into bbox predictions.
 
         Args:
@@ -352,7 +351,7 @@ class BBoxHead(BaseModule):
             scores = self.loss_cls.get_activation(cls_score)
         else:
             scores = F.softmax(
-                cls_score, dim=-1) if cls_score is not None else None  # Nx81
+                cls_score, dim=-1) if cls_score is not None else None
         # bbox_pred would be None in some detector when with_reg is False,
         # e.g. Grid R-CNN.
         if bbox_pred is not None:
@@ -363,8 +362,7 @@ class BBoxHead(BaseModule):
             if img_shape is not None:
                 bboxes[:, [0, 2]].clamp_(min=0, max=img_shape[1])
                 bboxes[:, [1, 3]].clamp_(min=0, max=img_shape[0])
-        if keep_not_scale:
-            not_scaled_bboxes = bboxes.clone()
+
         if rescale and bboxes.size(0) > 0:
             scale_factor = bboxes.new_tensor(scale_factor)
             bboxes = (bboxes.view(bboxes.size(0), -1, 4) / scale_factor).view(
@@ -373,12 +371,9 @@ class BBoxHead(BaseModule):
         if cfg is None:
             return bboxes, scores
         else:
-            det_bboxes, det_labels, inds = multiclass_nms(bboxes, scores,
-                                                        cfg.score_thr, cfg.nms,
-                                                        cfg.max_per_img, return_inds=True)
-            if keep_not_scale:
-                not_scaled_bboxes = not_scaled_bboxes.view(-1, 4)[inds]
-                return det_bboxes, det_labels, not_scaled_bboxes
+            det_bboxes, det_labels = multiclass_nms(bboxes, scores,
+                                                    cfg.score_thr, cfg.nms,
+                                                    cfg.max_per_img)
 
             return det_bboxes, det_labels
 

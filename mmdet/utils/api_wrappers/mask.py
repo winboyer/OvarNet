@@ -1,4 +1,5 @@
-from . import _mask as _mask
+# from . import _mask as _mask
+from pycocotools import _mask as _mask
 
 # Interface for manipulating masks stored in RLE format.
 #

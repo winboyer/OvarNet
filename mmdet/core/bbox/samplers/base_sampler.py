@@ -22,7 +22,6 @@ class BaseSampler(metaclass=ABCMeta):
         self.pos_sampler = self
         self.neg_sampler = self
 
-
     @abstractmethod
     def _sample_pos(self, assign_result, num_expected, **kwargs):
         """Sample positive samples."""
@@ -66,7 +65,6 @@ class BaseSampler(metaclass=ABCMeta):
             >>>                      add_gt_as_proposals=False)
             >>> self = self.sample(assign_result, bboxes, gt_bboxes, gt_labels)
         """
-
         if len(bboxes.shape) < 2:
             bboxes = bboxes[None, :]
 

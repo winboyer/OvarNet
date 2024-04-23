@@ -36,8 +36,8 @@ class ScaleCrop:
         y1 = cy + crop_size[0]/2
         x0 = cx - crop_size[1]/2
         x1 = cx + crop_size[1]/2
-        y0, y1 = np.clip([y0, y1], 0, img.shape[0]).astype(np.int)
-        x0, x1 = np.clip([x0, x1], 0, img.shape[1]).astype(np.int)
+        y0, y1 = np.clip([y0, y1], 0, img.shape[0]).astype(np.int32)
+        x0, x1 = np.clip([x0, x1], 0, img.shape[1]).astype(np.int32)
         img = img[y0:y1, x0:x1, ...]
         results['img'] = img
         results['img_shape'] = img.shape

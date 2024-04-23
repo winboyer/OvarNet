@@ -68,17 +68,14 @@ class SingleRoIExtractor(BaseRoIExtractor):
             roi_feats = roi_feats * 0
         else:
             roi_feats = feats[0].new_zeros(
-                rois.size(0), self.out_channels, *out_size)  # 2000x256x7x7
-        # TODO: remove this when parrots supports
-        if torch.__version__ == 'parrots':
-            roi_feats.requires_grad = True
+                rois.size(0), self.out_channels, *out_size)
 
         if num_levels == 1:
             if len(rois) == 0:
                 return roi_feats
             return self.roi_layers[0](feats[0], rois)
 
-        target_lvls = self.map_roi_levels(rois, num_levels)  # 2000
+        target_lvls = self.map_roi_levels(rois, num_levels)
 
         if roi_scale_factor is not None:
             rois = self.roi_rescale(rois, roi_scale_factor)
@@ -91,11 +88,11 @@ class SingleRoIExtractor(BaseRoIExtractor):
                 mask = mask.float().unsqueeze(-1)
                 # select target level rois and reset the rest rois to zero.
                 rois_i = rois.clone().detach()
-                rois_i *= mask
+                rois_i = rois_i * mask
                 mask_exp = mask.expand(*expand_dims).reshape(roi_feats.shape)
                 roi_feats_t = self.roi_layers[i](feats[i], rois_i)
-                roi_feats_t *= mask_exp
-                roi_feats += roi_feats_t
+                roi_feats_t = roi_feats_t * mask_exp
+                roi_feats = roi_feats + roi_feats_t
                 continue
             inds = mask.nonzero(as_tuple=False).squeeze(1)
             if inds.numel() > 0:
@@ -109,7 +106,7 @@ class SingleRoIExtractor(BaseRoIExtractor):
                 # in other GPUs and will cause a hanging error.
                 # Therefore, we add it to ensure each feature pyramid is
                 # included in the computation graph to avoid runtime bugs.
-                roi_feats += sum(
+                roi_feats = roi_feats + sum(
                     x.view(-1)[0]
                     for x in self.parameters()) * 0. + feats[i].sum() * 0.
         return roi_feats

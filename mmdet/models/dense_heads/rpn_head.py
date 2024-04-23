@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import copy
 
 import torch
@@ -13,6 +14,7 @@ from .anchor_head import AnchorHead
 @HEADS.register_module()
 class RPNHead(AnchorHead):
     """RPN head.
+
     Args:
         in_channels (int): Number of channels in the input feature map.
         init_cfg (dict or list[dict], optional): Initialization config dict.
@@ -60,7 +62,7 @@ class RPNHead(AnchorHead):
     def forward_single(self, x):
         """Forward feature map of a single scale level."""
         x = self.rpn_conv(x)
-        x = F.relu(x)
+        x = F.relu(x, inplace=False)
         rpn_cls_score = self.rpn_cls(x)
         rpn_bbox_pred = self.rpn_reg(x)
         return rpn_cls_score, rpn_bbox_pred
@@ -107,7 +109,6 @@ class RPNHead(AnchorHead):
                            cfg,
                            rescale=False,
                            with_nms=True,
-                           class_agnostic=False,
                            **kwargs):
         """Transform outputs of a single image into bbox predictions.
 
@@ -147,12 +148,12 @@ class RPNHead(AnchorHead):
         mlvl_valid_anchors = []
         nms_pre = cfg.get('nms_pre', -1)
         for level_idx in range(len(cls_score_list)):
-            rpn_cls_score = cls_score_list[level_idx]  # 3xHxW
-            rpn_bbox_pred = bbox_pred_list[level_idx]  # 12xHxW
+            rpn_cls_score = cls_score_list[level_idx]
+            rpn_bbox_pred = bbox_pred_list[level_idx]
             assert rpn_cls_score.size()[-2:] == rpn_bbox_pred.size()[-2:]
             rpn_cls_score = rpn_cls_score.permute(1, 2, 0)
             if self.use_sigmoid_cls:
-                rpn_cls_score = rpn_cls_score.reshape(-1)  # (3xHxW)=N_Prior
+                rpn_cls_score = rpn_cls_score.reshape(-1)
                 scores = rpn_cls_score.sigmoid()
             else:
                 rpn_cls_score = rpn_cls_score.reshape(-1, 2)
@@ -183,12 +184,10 @@ class RPNHead(AnchorHead):
 
         return self._bbox_post_process(mlvl_scores, mlvl_bbox_preds,
                                        mlvl_valid_anchors, level_ids, cfg,
-                                       img_shape, img_meta['scale_factor'],
-                                       rescale, class_agnostic, with_nms)
+                                       img_shape)
 
     def _bbox_post_process(self, mlvl_scores, mlvl_bboxes, mlvl_valid_anchors,
-                           level_ids, cfg, img_shape, scale_factor,
-                           rescale=False, class_agnostic=False, with_nms=True, **kwargs):
+                           level_ids, cfg, img_shape, **kwargs):
         """bbox post-processing method.
 
         Do the nms operation for bboxes in same level.
@@ -206,22 +205,18 @@ class RPNHead(AnchorHead):
             cfg (mmcv.Config): Test / postprocessing configuration,
                 if None, `self.test_cfg` would be used.
             img_shape (tuple(int)): The shape of model's input image.
-            class_agnostic: If true, different mlvl feature in RPN
+
         Returns:
             Tensor: Labeled boxes in shape (n, 5), where the first 4 columns
                 are bounding box positions (tl_x, tl_y, br_x, br_y) and the
                 5-th column is a score between 0 and 1.
         """
-        scores = torch.cat(mlvl_scores)  # 多尺度的结果综合 N
-        anchors = torch.cat(mlvl_valid_anchors)  # Nx4
-        rpn_bbox_pred = torch.cat(mlvl_bboxes)  # Nx4
+        scores = torch.cat(mlvl_scores)
+        anchors = torch.cat(mlvl_valid_anchors)
+        rpn_bbox_pred = torch.cat(mlvl_bboxes)
         proposals = self.bbox_coder.decode(
-            anchors, rpn_bbox_pred, max_shape=img_shape)  # Nx4
-
-        if rescale:
-            proposals /= proposals.new_tensor(scale_factor)
-
-        ids = torch.cat(level_ids)  # N, 不同尺度的标签
+            anchors, rpn_bbox_pred, max_shape=img_shape)
+        ids = torch.cat(level_ids)
 
         if cfg.min_bbox_size >= 0:
             w = proposals[:, 2] - proposals[:, 0]
@@ -231,13 +226,11 @@ class RPNHead(AnchorHead):
                 proposals = proposals[valid_mask]
                 scores = scores[valid_mask]
                 ids = ids[valid_mask]
-        if with_nms:
-            if proposals.numel() > 0:
-                dets, _ = batched_nms(proposals, scores, ids, cfg.nms, class_agnostic=class_agnostic)
-            else:
-                return proposals.new_zeros(0, 5)
+
+        if proposals.numel() > 0:
+            dets, _ = batched_nms(proposals, scores, ids, cfg.nms)
         else:
-            dets = torch.cat([proposals, scores[:, None]], -1)
+            return proposals.new_zeros(0, 5)
 
         return dets[:cfg.max_per_img]
 

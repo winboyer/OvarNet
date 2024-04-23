@@ -113,7 +113,7 @@ class BBoxTestMixin(object):
             (_det_bboxes, det_labels),
         ]
 
-    def simple_test_rpn(self, x, img_metas, rescale=False, class_agnostic=False, with_nms=True):
+    def simple_test_rpn(self, x, img_metas):
         """Test without augmentation, only for ``RPNHead`` and its variants,
         e.g., ``GARPNHead``, etc.
 
@@ -121,17 +121,13 @@ class BBoxTestMixin(object):
             x (tuple[Tensor]): Features from the upstream network, each is
                 a 4D-tensor.
             img_metas (list[dict]): Meta info of each image.
-            rescale: If rescale to original size
-            class_agnostic: If class agnostic, when nms
+
         Returns:
             list[Tensor]: Proposals of each image, each item has shape (n, 5),
                 where 5 represent (tl_x, tl_y, br_x, br_y, score).
         """
-        rpn_outs = self(x)  # (cls, reg) cls: 5x[Bx(3x1)xHxW] reg: 5x[Bx(3x4)xHxW]
-        proposal_list = self.get_bboxes(*rpn_outs, img_metas=img_metas,
-                                        rescale=rescale, class_agnostic=class_agnostic,
-                                        with_nms=with_nms
-                                        )
+        rpn_outs = self(x)
+        proposal_list = self.get_bboxes(*rpn_outs, img_metas=img_metas)
         return proposal_list
 
     def aug_test_rpn(self, feats, img_metas):

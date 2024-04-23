@@ -25,7 +25,8 @@ mp_start_method = 'fork'
 #   - `base_batch_size` = (8 GPUs) x (2 samples per GPU).
 auto_scale_lr = dict(enable=False, base_batch_size=16)
 
-data_root = '/data/kyanchen/prompt/data'
+# data_root = '/data/kyanchen/prompt/data'
+data_root = '/root/jinyfeng/datas/OverNet'
 
 attribute_index_file = dict(
     # att_file='../attributes/VAW/common2common_att2id.json',
@@ -49,7 +50,8 @@ attribute_index_file = dict(
 
 # pre_load_ckpt = 'results/EXP20221023_4/epoch_6.pth'
 # pre_load_ckpt = 'results/EXP20221102_0/epoch_6.pth'
-pre_load_ckpt = 'results/EXP20221103_1/epoch_6.pth'
+# pre_load_ckpt = 'results/EXP20221103_1/epoch_6.pth'
+pre_load_ckpt = 'results/EXP20231009/epoch_60.pth'
 # pre_load_ckpt = None
 
 model = dict(

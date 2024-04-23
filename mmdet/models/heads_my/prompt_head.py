@@ -15,7 +15,7 @@ import torch.nn.functional as F
 from torch import nn
 from torch.nn import TransformerEncoder, TransformerEncoderLayer, LayerNorm
 import warnings
-from torchmetrics.functional import precision_recall, f1_score, average_precision
+from torchmetrics.functional.classification import precision_recall, f1_score, average_precision
 
 warnings.filterwarnings('ignore')
 

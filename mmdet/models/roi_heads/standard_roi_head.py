@@ -131,7 +131,6 @@ class StandardRoIHead(BaseRoIHead, BBoxTestMixin, MaskTestMixin):
     def _bbox_forward_train(self, x, sampling_results, gt_bboxes, gt_labels,
                             img_metas):
         """Run forward function and calculate loss for box head in training."""
-
         rois = bbox2roi([res.bboxes for res in sampling_results])
         bbox_results = self._bbox_forward(x, rois)
 
@@ -226,9 +225,7 @@ class StandardRoIHead(BaseRoIHead, BBoxTestMixin, MaskTestMixin):
                     proposal_list,
                     img_metas,
                     proposals=None,
-                    rescale=False,
-                    keep_not_scale=False,
-                    ):
+                    rescale=False):
         """Test without augmentation.
 
         Args:

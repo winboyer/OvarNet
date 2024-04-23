@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import mmcv
 import numpy as np
-from mmdet.utils.api_wrappers import maskUtils as mask_util
+import pycocotools.mask as mask_util
 import torch
 
 

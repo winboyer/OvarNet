@@ -204,7 +204,7 @@ class CLIPAttrImgCropDataset(Dataset):
             flag_dataset = [x['img_id'].split('_')[0] for x in self.instances]
             dataset_types = {'coco': 0, 'vaw': 1, 'ovadgen': 1}
             flag_dataset = [dataset_types[x] for x in flag_dataset]
-            self.flag_dataset = np.array(flag_dataset, dtype=np.int)
+            self.flag_dataset = np.array(flag_dataset, dtype=np.int32)
 
         self.flag = np.zeros(len(self), dtype=int)
 
@@ -501,7 +501,7 @@ class CLIPAttrImgCropDataset(Dataset):
                     category_id = self.category2id.get(category, None)
                     if category_id is not None:
                         labels[category_id+len(self.att2id)] = 1
-                results['gt_labels'] = labels.astype(np.int)
+                results['gt_labels'] = labels.astype(np.int32)
                 if 'gen' in data_set:
                     results = self.pipeline(results, 0)
                     results = self.pipeline(results, (2, ':'))
@@ -550,7 +550,7 @@ class CLIPAttrImgCropDataset(Dataset):
                 category_id = self.category2id.get(category, None)
                 if category_id is not None:
                     labels[category_id + len(self.att2id)] = 1
-            np_gt_labels.append(labels.astype(np.int))
+            np_gt_labels.append(labels.astype(np.int32))
         return np.stack(np_gt_labels, axis=0)
 
     def get_data_set_type(self):
